@@ -38,11 +38,12 @@ No local Python, R, or conda installation is required. Everything runs inside Do
 
 ### Step 1: Setup the environment
 
-Clone the repository and run the setup script `setup.sh` from outside the directory to initialize the environment with the specified watch folder path.
+Clone the repository and run the setup script `setup.sh` from the `sentinel-rat` directory to initialize the environment with the specified watch folder path.
 
 ```bash
 git clone https://github.com/ssciwr/sentinel-rat.git
-sentinel-rat/setup.sh /path/to/your/watch/folder # run from outside the repo
+cd sentinel-rat
+./setup.sh /path/to/your/watch/folder
 ```
 
 The setup script will:
@@ -54,10 +55,9 @@ The setup script will:
 
 ### Step 2: Start all services
 
-Run Docker command inside the `sentinel-rat` folder:
+Run Docker command from the `sentinel-rat` directory:
 
 ```bash
-cd sentinel-rat
 docker compose up --build
 ```
 

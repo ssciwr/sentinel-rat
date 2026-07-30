@@ -10,6 +10,12 @@ fi
 
 WATCH_FOLDER_HOST="$1"
 
+# make sure we are running this script inside the sentinel-rat directory
+if [ ! -f "docker-compose.yml" ]; then
+  echo "This script must be run from the sentinel-rat directory."
+  exit 1
+fi
+
 # check if docker is installed
 if ! command -v docker &> /dev/null; then
   echo "Docker is not installed. Please install Docker and try again."
@@ -44,6 +50,9 @@ declare -A REPOS=(
   ["sentinel-rat-pipeline"]="https://github.com/ssciwr/sentinel-rat-pipeline.git"
 )
 
+# move out one level to clone other repositories
+cd ..
+
 for NAME in "${!REPOS[@]}"; do
   if [ ! -d "$NAME" ]; then
     echo "Cloning $NAME..."
@@ -53,14 +62,17 @@ for NAME in "${!REPOS[@]}"; do
   fi
 done
 
+# move back to sentinel-rat directory
+cd sentinel-rat
+
 # create .env file inside sentinel-rat directory
 # update WATCH_FOLDER_HOST in .env file with the provided argument
-# value of WATCH_FOLDER_HOST must be relative to the sentinel-rat directory, e.g., ./watch_folder
-ENV_FILE="sentinel-rat/.env"
+# value of WATCH_FOLDER_HOST must be relative to the sentinel-rat directory, e.g., ../watch_folder
+ENV_FILE=".env"
 RELATIVE_WATCH_FOLDER_HOST=$(realpath --relative-to=sentinel-rat "$WATCH_FOLDER_HOST")
 if [ ! -f "$ENV_FILE" ]; then
   echo "Creating .env file in sentinel-rat directory..."
-  cp sentinel-rat/.env.example "$ENV_FILE"
+  cp .env.example "$ENV_FILE"
   sed -i "s|WATCH_FOLDER_HOST=.*|WATCH_FOLDER_HOST=$RELATIVE_WATCH_FOLDER_HOST|" "$ENV_FILE"
 else
   echo ".env file already exists in sentinel-rat directory."
