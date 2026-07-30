@@ -65,3 +65,5 @@ else
   echo "Updating WATCH_FOLDER_HOST in .env file with $WATCH_FOLDER_HOST..."
   sed -i "s|WATCH_FOLDER_HOST=.*|WATCH_FOLDER_HOST=$WATCH_FOLDER_HOST|" "$ENV_FILE"
 fi
+
+echo "Setup complete. You can now run 'docker compose up --build' to start the SENTINEL-RAT application."
