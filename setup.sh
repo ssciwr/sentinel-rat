@@ -10,7 +10,32 @@ fi
 
 WATCH_FOLDER_HOST="$1"
 
-echo "Setting up SENTINEL-RAT with watch folder: $WATCH_FOLDER_HOST"
+# check if docker is installed
+if ! command -v docker &> /dev/null; then
+  echo "Docker is not installed. Please install Docker and try again."
+  exit 1
+fi
+
+echo "Docker found: $(docker --version)"
+
+# check if docker-compose is installed
+if ! docker compose version &> /dev/null; then
+  echo "Docker Compose is not installed. Please install Docker Compose and try again."
+  exit 1
+fi
+
+echo "Docker Compose found: $(docker compose version)"
+
+# check if user has permission to run docker commands
+if ! docker info &> /dev/null; then
+  echo "You do not have permission to run Docker commands."
+  echo "Run: sudo usermod -aG docker \$USER"
+  echo "Then log out and log back in, or restart your session."
+  echo "Please contact your system administrator if you do not have sudo privileges."
+  exit 1
+fi
+
+echo "Docker environement is ready. Setting up SENTINEL-RAT with watch folder: $WATCH_FOLDER_HOST"
 
 # clone repositories if they don't exist
 declare -A REPOS=(
