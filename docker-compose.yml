@@ -1,0 +1,86 @@
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    container_name: pi-sentinel-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sentinel_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinel_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-sentinel_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-sentinel_user} -d ${POSTGRES_DB:-sentinel_db}",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinel-rat-net
+
+  sentinel-rat-ml-pipeline:
+    build:
+      context: ../sentinel-rat-ml-pipeline
+      dockerfile: Dockerfile
+    container_name: ml-pipeline
+    ports:
+      - "${ML_PIPELINE_PORT:-8000}:8000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c ''import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/health", timeout=2)'' || exit 1',
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - sentinel-rat-net
+
+  sentinel-rat-pipeline:
+    build:
+      context: ../sentinel-rat-pipeline
+      dockerfile: Dockerfile
+    container_name: pipeline
+    ports:
+      - "${PIPELINE_PORT:-8001}:8001"
+    volumes:
+      - ${WATCH_FOLDER_HOST:-../watched-images}:${WATCH_FOLDER_DOCKER:-/data/images}
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      WATCH_FOLDER_DOCKER: ${WATCH_FOLDER_DOCKER:-/data/images}
+      ML_PIPELINE_URL: http://sentinel-rat-ml-pipeline:${ML_PIPELINE_PORT:-8000}
+    depends_on:
+      sentinel-rat-ml-pipeline:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - sentinel-rat-net
+
+  sentinel-rat-dashboard:
+    build:
+      context: ../sentinel-rat-dashboard
+      dockerfile: Dockerfile
+    container_name: dashboard
+    ports:
+      - "${DASHBOARD_PORT:-8501}:3838"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sentinel-rat-net
+
+volumes:
+  db-data:
+
+networks:
+  sentinel-rat-net:
+    driver: bridge
