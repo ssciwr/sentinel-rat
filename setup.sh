@@ -62,7 +62,7 @@ if [ ! -f "$ENV_FILE" ]; then
   sed -i "s|WATCH_FOLDER_HOST=.*|WATCH_FOLDER_HOST=$WATCH_FOLDER_HOST|" "$ENV_FILE"
 else
   echo ".env file already exists in sentinel-rat directory."
-  echo "Updating WATCH_FOLDER_HOST in .env file with $WATCH_FOLDER_HOST..."
+  echo "Updating WATCH_FOLDER_HOST in .env file with $WATCH_FOLDER_HOST"
   sed -i "s|WATCH_FOLDER_HOST=.*|WATCH_FOLDER_HOST=$WATCH_FOLDER_HOST|" "$ENV_FILE"
 fi
 
