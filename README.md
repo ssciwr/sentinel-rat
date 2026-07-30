@@ -54,7 +54,10 @@ The setup script will:
 
 ### Step 2: Start all services
 
+Run Docker command inside the `sentinel-rat` folder:
+
 ```bash
+cd sentinel-rat
 docker compose up --build
 ```
 
