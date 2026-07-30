@@ -40,6 +40,8 @@ No local Python, R, or conda installation is required. Everything runs inside Do
 
 Clone the repository and run the setup script `setup.sh` from the `sentinel-rat` directory to initialize the environment with the specified watch folder path.
 
+**Note**: the watch folder path must be an absolute path or a relative path from the `sentinel-rat` directory.
+
 ```bash
 git clone https://github.com/ssciwr/sentinel-rat.git
 cd sentinel-rat

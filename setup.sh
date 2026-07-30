@@ -67,17 +67,15 @@ cd sentinel-rat
 
 # create .env file inside sentinel-rat directory
 # update WATCH_FOLDER_HOST in .env file with the provided argument
-# value of WATCH_FOLDER_HOST must be relative to the sentinel-rat directory, e.g., ../watch_folder
 ENV_FILE=".env"
-RELATIVE_WATCH_FOLDER_HOST=$(realpath --relative-to=sentinel-rat "$WATCH_FOLDER_HOST")
 if [ ! -f "$ENV_FILE" ]; then
   echo "Creating .env file in sentinel-rat directory..."
   cp .env.example "$ENV_FILE"
-  sed -i "s|WATCH_FOLDER_HOST=.*|WATCH_FOLDER_HOST=$RELATIVE_WATCH_FOLDER_HOST|" "$ENV_FILE"
+  sed -i "s|WATCH_FOLDER_HOST=.*|WATCH_FOLDER_HOST=$WATCH_FOLDER_HOST|" "$ENV_FILE"
 else
   echo ".env file already exists in sentinel-rat directory."
-  echo "Updating WATCH_FOLDER_HOST in .env file with $RELATIVE_WATCH_FOLDER_HOST"
-  sed -i "s|WATCH_FOLDER_HOST=.*|WATCH_FOLDER_HOST=$RELATIVE_WATCH_FOLDER_HOST|" "$ENV_FILE"
+  echo "Updating WATCH_FOLDER_HOST in .env file with $WATCH_FOLDER_HOST"
+  sed -i "s|WATCH_FOLDER_HOST=.*|WATCH_FOLDER_HOST=$WATCH_FOLDER_HOST|" "$ENV_FILE"
 fi
 
 echo "-------"
