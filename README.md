@@ -1,5 +1,7 @@
 # Sentinel Rat
 
+Work in progress...
+
 ## Overview
 
 Orchestration repository for the SENTINEL-RAT project.
@@ -10,7 +12,7 @@ General purpose: Rodent and predator (peacock / snake) detection from RGB and th
 
 | Version | Date | Notes |
 |---------|------|------|
-| 0.0.11 | 2026-07-30 | Initial version with scaffolded code for all components. |
+| 0.0.1 | 2026-07-30 | Initial version with scaffolded code for all components. |
 
 ## Developers
 - Tuyen Le, ssc@iwr.uni-heidelberg.de
