@@ -45,7 +45,7 @@ echo "Docker environement is ready. Setting up SENTINEL-RAT with watch folder: $
 
 # clone repositories if they don't exist
 declare -A REPOS=(
-  ["sentinel-rat-dashboard"]="https://github.com/ssciwr/sentinel-rat-dashboard.git"
+  ["sentinel-rat-dashboard"]="https://github.com/ssciwr/sentinel-rat-dashboard.git@main-before-data-model"
   ["sentinel-rat-ml-pipeline"]="https://github.com/ssciwr/sentinel-rat-ml-pipeline.git"
   ["sentinel-rat-pipeline"]="https://github.com/ssciwr/sentinel-rat-pipeline.git"
 )
