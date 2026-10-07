@@ -22,6 +22,30 @@ services:
     networks:
       - sentinel-rat-net
 
+  # One-shot service that creates the database schema and seeds reference data
+  # before the pipeline or dashboard start. It reuses the pipeline image
+  # (Python 3.13 with the sentinel-rat-dashboard ORM package installed from
+  # git@main), so the schema it creates matches the data model the pipeline
+  # queries with. Runs the dashboard's init_db module, then seed_db.py (mounted
+  # from this repo), then exits.
+  db-init:
+    build:
+      context: ../sentinel-rat-pipeline
+      dockerfile: Dockerfile
+    image: sentinel-rat-pipeline:local
+    container_name: db-init
+    command: ["sh", "-c", "python -m dashboard.init_db && python /seed/seed_db.py"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - ./seed_db.py:/seed/seed_db.py:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - sentinel-rat-net
+
   sentinel-rat-ml-pipeline:
     build:
       context: ../sentinel-rat-ml-pipeline
@@ -46,6 +70,7 @@ services:
     build:
       context: ../sentinel-rat-pipeline
       dockerfile: Dockerfile
+    image: sentinel-rat-pipeline:local
     container_name: pipeline
     ports:
       - "${PIPELINE_PORT:-8001}:8001"
@@ -60,6 +85,8 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     networks:
       - sentinel-rat-net
 
@@ -75,6 +102,30 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    networks:
+      - sentinel-rat-net
+
+  # Optional one-shot service that loads illustrative SAMPLE/DEMO data. It only
+  # runs when the "demo" profile is enabled, so a normal `docker compose up`
+  # ignores it and never loads demo data into a real deployment:
+  #   docker compose --profile demo up load-sample-data
+  # It reuses the pipeline image and runs after db-init so the schema and seed
+  # data (cameras, taxonomy) already exist.
+  load-sample-data:
+    image: sentinel-rat-pipeline:local
+    profiles: ["demo"]
+    container_name: load-sample-data
+    command: ["python", "/seed/sample_data.py"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - ./sample_data.py:/seed/sample_data.py:ro
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    restart: "no"
     networks:
       - sentinel-rat-net
 
