@@ -64,9 +64,22 @@ docker compose up --build
 ```
 
 Docker Compose will:
-1. Start PostgreSQL 17, initialize the `database`, and wait for it to be healthy
-2. Start the `dashboard`, `ml-pipeline`, and `pipeline` services
-3. The `pipeline` service will start watching the watch folder for new images
+1. Start PostgreSQL 17 and wait for it to be healthy
+2. Run the one-shot `db-init` service, which creates the database schema and loads the required **seed data** (reference data such as cameras and taxonomy, from `seed_db.py`), then exits
+3. Start the `dashboard`, `ml-pipeline`, and `pipeline` services (they wait for `db-init` to finish so the schema and seed data exist first)
+4. The `pipeline` service will start watching the watch folder for new images
+
+> **Note**: the watcher resolves the camera for each image from the filename prefix (e.g. `HDCAM01_...jpg` → camera `HDCAM01`). That camera must exist in the database (it is created by the seed data), otherwise persistence of the image is skipped.
+
+### Optional: load sample (demo) data
+
+The seed data above is the minimum the system needs to run. To additionally load **illustrative sample data** (e.g. example image captures) so the dashboard has something to display, enable the `demo` profile:
+
+```bash
+docker compose --profile demo up load-sample-data
+```
+
+This runs the one-shot `load-sample-data` service (defined in `sample_data.py`), which loads demo rows after `db-init` has completed, then exits. It is safe to re-run — it skips rows that already exist. A normal `docker compose up` does **not** load this data, so it never ends up in a real deployment.
 
 ### Step 3: View results
 
