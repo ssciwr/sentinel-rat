@@ -87,6 +87,10 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       WATCH_FOLDER_DOCKER: ${WATCH_FOLDER_DOCKER:-/data/images}
       ML_PIPELINE_URL: http://sentinel-rat-ml-pipeline:${ML_PIPELINE_PORT:-8000}
+      BATCH_WINDOW_SECONDS: ${BATCH_WINDOW_SECONDS:-60}
+      MAX_BATCH_SIZE: ${MAX_BATCH_SIZE:-50}
+      PROCESS_BACKLOG: ${PROCESS_BACKLOG:-true}
+      FORCE_DELETE_IMAGE: ${FORCE_DELETE_IMAGE:-false}
     depends_on:
       sentinel-rat-ml-pipeline:
         condition: service_healthy
