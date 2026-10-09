@@ -90,7 +90,7 @@ services:
       BATCH_WINDOW_SECONDS: ${BATCH_WINDOW_SECONDS:-60}
       MAX_BATCH_SIZE: ${MAX_BATCH_SIZE:-50}
       PROCESS_BACKLOG: ${PROCESS_BACKLOG:-true}
-      FORCE_DELETE_IMAGE: ${FORCE_DELETE_IMAGE:-false}
+      FORCE_DELETE_IMAGE_IN_DB: ${FORCE_DELETE_IMAGE_IN_DB:-false}
     depends_on:
       sentinel-rat-ml-pipeline:
         condition: service_healthy
