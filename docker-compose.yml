@@ -101,6 +101,29 @@ services:
     networks:
       - sentinel-rat-net
 
+  # Scheduler of the daily analysis: aggregates the detections of each past day
+  # into daily_analysis_result every night at ANALYSIS_TIME (in ANALYSIS_TZ),
+  # and once at startup to catch up on days missed while it was not running.
+  # It reuses the pipeline image. To run it once by hand instead:
+  #   docker compose run --rm daily-analysis --once
+  #   docker compose run --rm daily-analysis --date 2026-10-01 --recompute
+  daily-analysis:
+    image: sentinel-rat-pipeline:local
+    container_name: daily-analysis
+    entrypoint: ["python", "-m", "sentinel_rat_pipeline.daily_analysis"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      ANALYSIS_TZ: ${ANALYSIS_TZ:-Asia/Colombo}
+      ANALYSIS_TIME: ${ANALYSIS_TIME:-00:00}
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - sentinel-rat-net
+
   sentinel-rat-dashboard:
     build:
       context: ../sentinel-rat-dashboard
@@ -111,6 +134,8 @@ services:
       - "${DASHBOARD_PORT:-8501}:3838"
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      # corrections rebuild the daily analysis of their day, in the same timezone
+      ANALYSIS_TZ: ${ANALYSIS_TZ:-Asia/Colombo}
     depends_on:
       db:
         condition: service_healthy

@@ -68,6 +68,7 @@ Docker Compose will:
 2. Run the one-shot `db-init` service, which creates the database schema and loads the required **seed data** (reference data such as cameras and taxonomy, from `seed_db.py`), then exits
 3. Start the `dashboard`, `ml-pipeline`, and `pipeline` services (they wait for `db-init` to finish so the schema and seed data exist first)
 4. The `pipeline` service will start watching the watch folder for new images
+5. The `daily-analysis` service aggregates the detections of each past day into the `daily_analysis_result` table, every night at `ANALYSIS_TIME` in the timezone `ANALYSIS_TZ` (see below)
 
 > **Note**: the watcher resolves the camera for each image from the filename prefix (e.g. `HDCAM01_...jpg` → camera `HDCAM01`). That camera must exist in the database (it is created by the seed data), otherwise persistence of the image is skipped.
 
@@ -80,6 +81,26 @@ docker compose --profile demo up load-sample-data
 ```
 
 This runs the one-shot `load-sample-data` service (defined in `sample_data.py`), which loads demo rows after `db-init` has completed, then exits. It is safe to re-run — it skips rows that already exist. A normal `docker compose up` does **not** load this data, so it never ends up in a real deployment.
+
+### Optional: run the daily analysis by hand
+
+The `daily-analysis` service runs on its own every night. To run it once by hand, e.g. after a downtime or to rebuild a day:
+
+```bash
+# aggregate all past days that have images not aggregated yet
+docker compose run --rm daily-analysis --once
+# aggregate one day (in ANALYSIS_TZ); --recompute rebuilds it from all its images
+docker compose run --rm daily-analysis --date 2026-10-01 --recompute
+```
+
+Without Docker Compose, use `docker run` with the pipeline image on the network of the stack:
+
+```bash
+docker run --rm --network sentinel-rat_sentinel-rat-net \
+  -e DATABASE_URL=postgresql+psycopg://sentinel_user:sentinel_pass@db:5432/sentinel_db \
+  -e ANALYSIS_TZ=Asia/Colombo \
+  sentinel-rat-pipeline:local python -m sentinel_rat_pipeline.daily_analysis --once
+```
 
 ### Step 3: View results
 
@@ -107,6 +128,8 @@ See `.env.example`. Key variables:
 - `WATCH_FOLDER_HOST` (watch folder path on the host machine)
 - `DASHBOARD_PORT`
 - `DATABASE_URL`
+- `ANALYSIS_TZ` (timezone in which a day of the daily analysis starts and ends, default `Asia/Colombo`)
+- `ANALYSIS_TIME` (local time at which the daily analysis runs every night, default `00:00`)
 
 ## What to expect with the scaffolded code (will be replaced with the actual implementation)
 
