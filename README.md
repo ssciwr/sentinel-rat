@@ -69,7 +69,12 @@ Docker Compose will:
 3. Start the `dashboard`, `ml-pipeline`, and `pipeline` services (they wait for `db-init` to finish so the schema and seed data exist first)
 4. The `pipeline` service will start watching the watch folder for new images
 
-> **Note**: the watcher resolves the camera for each image from the filename prefix (e.g. `HDCAM01_...jpg` → camera `HDCAM01`). That camera must exist in the database (it is created by the seed data), otherwise persistence of the image is skipped.
+> [!NOTE]
+> The images of each camera are stored in a sub-folder of the watch folder named after the camera (e.g. `watched-images/hd-zoo-01/...jpg` → camera `hd-zoo-01`). The watcher resolves the camera of each image as follows:
+> - image in a sub-folder: the camera named after the sub-folder, else the `device_id` in the image's EXIF `ImageDescription`;
+> - image directly in the watch folder: the `device_id` in the image's EXIF `ImageDescription`, else `DEFAULT_CAMERA_NAME` (default `hd-zoo-01`).
+>
+> That camera must exist in the database (`hd-zoo-01` is created by the seed data), otherwise persistence of the image is skipped.
 
 ### Optional: load sample (demo) data
 
@@ -105,6 +110,7 @@ See `.env.example`. Key variables:
 - `PIPELINE_PORT`
 - `WATCH_FOLDER_DOCKER` (watch folder path inside the Docker container)
 - `WATCH_FOLDER_HOST` (watch folder path on the host machine)
+- `DEFAULT_CAMERA_NAME` (camera of images directly in the watch folder without a `device_id` in their metadata, default `hd-zoo-01`)
 - `DASHBOARD_PORT`
 - `DATABASE_URL`
 

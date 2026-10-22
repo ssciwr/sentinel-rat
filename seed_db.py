@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # (PostGIS POINT order), matching dashboard.db.utils.normalize_location.
 CAMERAS: list[dict] = [
     {
-        "name": "HDCAM01",
+        "name": "hd-zoo-01",
         # Heidelberg Zoo: 49.4153 N, 8.6608 E
         "location": (8.6608, 49.4153),
         "description": "first camera in HD Zoo",
