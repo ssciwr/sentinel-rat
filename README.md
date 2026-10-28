@@ -144,9 +144,10 @@ Given any image, the ML pipeline will return a mock output for testing purposes.
 
 >SENTINEL-RAT Dashboard
 >
->| detection_id | image_path | animals_detected | species | confidence | detected_at |
->|--------------|------------|------------------|---------|------------|-------------|
->|20260730115638|a-cat-and-a-mouse-are-eating-food-together-photo.jpg|2|{"cat": 1, "rodent": 1}|0.95|1785412598.89|
+>| id |	image_capture_id | det_model_id | created_at | confidence | bbox | detected_class | species | species_confidence | role |
+>| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+>| 1 | 1 | 1| 2026-10-28 14:54:02.802789 | 0.92 | x_max: 0.4, x_min: 0.1, y_max: 0.5, y_min: 0.2 | animal | black rat | 0.87 | not assessed |
+>| 2 | 1 | 1 | 2026-10-28 14:54:02.802789 | 0.81 | x_max: 0.9, x_min: 0.6, y_max: 0.95, y_min: 0.1 | person | NA | NA | NA |
 
 ---
 
