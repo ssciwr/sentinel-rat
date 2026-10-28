@@ -69,7 +69,12 @@ Docker Compose will:
 3. Start the `dashboard`, `ml-pipeline`, and `pipeline` services (they wait for `db-init` to finish so the schema and seed data exist first)
 4. The `pipeline` service will start watching the watch folder for new images
 
-> **Note**: the watcher resolves the camera for each image from the filename prefix (e.g. `HDCAM01_...jpg` → camera `HDCAM01`). That camera must exist in the database (it is created by the seed data), otherwise persistence of the image is skipped.
+> [!NOTE]
+> The images of each camera are stored in a sub-folder of the watch folder named after the camera (e.g. `watched-images/hd-zoo-01/...jpg` → camera `hd-zoo-01`). The watcher resolves the camera of each image as follows:
+> - image in a sub-folder: the camera named after the sub-folder, else the `device_id` in the image's EXIF `ImageDescription`;
+> - image directly in the watch folder: the `device_id` in the image's EXIF `ImageDescription`, else `DEFAULT_CAMERA_NAME` (default `hd-zoo-01`).
+>
+> That camera must exist in the database (`hd-zoo-01` is created by the seed data), otherwise persistence of the image is skipped.
 
 ### Optional: load sample (demo) data
 
@@ -105,6 +110,7 @@ See `.env.example`. Key variables:
 - `PIPELINE_PORT`
 - `WATCH_FOLDER_DOCKER` (watch folder path inside the Docker container)
 - `WATCH_FOLDER_HOST` (watch folder path on the host machine)
+- `DEFAULT_CAMERA_NAME` (camera of images directly in the watch folder without a `device_id` in their metadata, default `hd-zoo-01`)
 - `DASHBOARD_PORT`
 - `DATABASE_URL`
 
@@ -138,9 +144,10 @@ Given any image, the ML pipeline will return a mock output for testing purposes.
 
 >SENTINEL-RAT Dashboard
 >
->| detection_id | image_path | animals_detected | species | confidence | detected_at |
->|--------------|------------|------------------|---------|------------|-------------|
->|20260730115638|a-cat-and-a-mouse-are-eating-food-together-photo.jpg|2|{"cat": 1, "rodent": 1}|0.95|1785412598.89|
+>| id |	image_capture_id | det_model_id | created_at | confidence | bbox | detected_class | species | species_confidence | role |
+>| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+>| 1 | 1 | 1| 2026-10-28 14:54:02.802789 | 0.92 | x_max: 0.4, x_min: 0.1, y_max: 0.5, y_min: 0.2 | animal | black rat | 0.87 | not assessed |
+>| 2 | 1 | 1 | 2026-10-28 14:54:02.802789 | 0.81 | x_max: 0.9, x_min: 0.6, y_max: 0.95, y_min: 0.1 | person | NA | NA | NA |
 
 ---
 
