@@ -86,6 +86,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       WATCH_FOLDER_DOCKER: ${WATCH_FOLDER_DOCKER:-/data/images}
+      DEFAULT_CAMERA_NAME: ${DEFAULT_CAMERA_NAME:-hd-zoo-01}
       ML_PIPELINE_URL: http://sentinel-rat-ml-pipeline:${ML_PIPELINE_PORT:-8000}
       BATCH_WINDOW_SECONDS: ${BATCH_WINDOW_SECONDS:-60}
       MAX_BATCH_SIZE: ${MAX_BATCH_SIZE:-50}

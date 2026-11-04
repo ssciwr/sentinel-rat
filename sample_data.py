@@ -34,8 +34,8 @@ logger = logging.getLogger(__name__)
 # is a (longitude, latitude) tuple (typically the camera's own location).
 SAMPLE_IMAGES: list[dict] = [
     {
-        "camera_name": "HDCAM01",
-        "image_path": "HDCAM01_20260730_115638.jpg",
+        "camera_name": "hd-zoo-01",
+        "image_path": "hd-zoo-01/20260730T115638Z.jpg",
         "location": (8.6608, 49.4153),
         "captured_at": datetime(2026, 7, 30, 11, 56, 38, tzinfo=timezone.utc),
     },
