@@ -108,6 +108,7 @@ services:
   # It reuses the pipeline image. To run it once by hand instead:
   #   docker compose run --rm daily-analysis --once
   #   docker compose run --rm daily-analysis --date 2026-10-01 --recompute
+  #   docker compose run --rm daily-analysis --recompute-all
   daily-analysis:
     image: sentinel-rat-pipeline:local
     container_name: daily-analysis
@@ -116,6 +117,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       ANALYSIS_TZ: ${ANALYSIS_TZ:-Asia/Colombo}
       ANALYSIS_TIME: ${ANALYSIS_TIME:-00:00}
+      DET_CONF_THRESHOLD: ${DET_CONF_THRESHOLD:-0}
+      CLAS_CONF_THRESHOLD: ${CLAS_CONF_THRESHOLD:-0}
     depends_on:
       db:
         condition: service_healthy
@@ -137,6 +140,10 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       # corrections rebuild the daily analysis of their day, in the same timezone
       ANALYSIS_TZ: ${ANALYSIS_TZ:-Asia/Colombo}
+      # a correction keeps the thresholds stored in the daily analysis rows; these
+      # are only used if its camera and day has no rows yet
+      DET_CONF_THRESHOLD: ${DET_CONF_THRESHOLD:-0}
+      CLAS_CONF_THRESHOLD: ${CLAS_CONF_THRESHOLD:-0}
     depends_on:
       db:
         condition: service_healthy
