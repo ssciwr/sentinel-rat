@@ -96,6 +96,9 @@ The `daily-analysis` service runs on its own every night. To run it once by hand
 docker compose run --rm daily-analysis --once
 # aggregate one day (in ANALYSIS_TZ); --recompute rebuilds it from all its images
 docker compose run --rm daily-analysis --date 2026-10-01 --recompute
+# rebuild all past days with the thresholds in .env; run `docker compose up -d` first,
+# so that the running services use the new thresholds as well
+docker compose run --rm daily-analysis --recompute-all
 ```
 
 Without Docker Compose, use `docker run` with the pipeline image on the network of the stack:
@@ -136,6 +139,7 @@ See `.env.example`. Key variables:
 - `DATABASE_URL`
 - `ANALYSIS_TZ` (timezone in which a day of the daily analysis starts and ends, default `Asia/Colombo`)
 - `ANALYSIS_TIME` (local time at which the daily analysis runs every night, default `00:00`)
+- `DET_CONF_THRESHOLD`, `CLAS_CONF_THRESHOLD` (results of all detection and classification models below these confidence thresholds are left out of the daily analysis, `0` to `1`, default `0`, which keeps all results)
 
 ## What to expect with the scaffolded code (will be replaced with the actual implementation)
 
