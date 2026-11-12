@@ -145,25 +145,29 @@ See `.env.example`. Key variables:
 
 ### 1. Database schema
 
-`analysis_results` table in PostgreSQL (with PostGIS enabled):
+The database is PostgreSQL with PostGIS enabled. Its schema is defined in `src/dashboard/db/data_model.py` of [sentinel-rat-dashboard](https://github.com/ssciwr/sentinel-rat-dashboard) and created by the `db-init` service. See the [data model](https://github.com/ssciwr/sentinel-rat-dashboard#data-model) in its README for all columns and relations.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `SERIAL PRIMARY KEY` | Auto-increment PK |
-| `detection_id` | `VARCHAR(50)` | Detection ID, e.g. `"%Y%m%d%H%M%S"` of the detection time |
-| `image_path` | `TEXT` | Full path of the analyzed image |
-| `animals_detected` | `INTEGER` | Total count |
-| `species` | `JSONB` | Dict of detected species with counts |
-| `confidence` | `DOUBLE PRECISION` | Model confidence |
-| `detected_at` | `TIMESTAMPTZ` | Time of detection |
+| Table | Content | Written by |
+|-------|---------|------------|
+| `camera` | Cameras, with their current location and status | `db-init` (seed data in `seed_db.py`) |
+| `camera_location_history` | Previous locations of a camera | `sentinel-rat-dashboard` |
+| `ml_model` | Detection and classification models | `sentinel-rat-pipeline` |
+| `taxonomy` | Species, with `is_predator` | `sentinel-rat-pipeline` |
+| `image_capture` | One row per image: camera, capture time, `analyzed_at` and `file_status` | `sentinel-rat-pipeline`; `daily-analysis` sets `analyzed_at` |
+| `object_detection` | Detections of an image: bounding box, class and confidence | `sentinel-rat-pipeline` |
+| `species_classification` | Species of a detection, with confidence | `sentinel-rat-pipeline` |
+| `detection_correction`, `classification_correction` | Corrections of detections and species made by users | `sentinel-rat-dashboard` |
+| `app_user` | Dashboard users | `sentinel-rat-dashboard` |
+| `daily_analysis_result` | Count of each species per camera, day and detection model, with average classification confidence, confidence thresholds and image count | `daily-analysis`; `sentinel-rat-dashboard` rebuilds a day when a user corrects it |
 
 ### 2. ML pipeline mock output
 
-Given any image, the ML pipeline will return a mock output for testing purposes.
+Given any image, the ML pipeline returns the same mock output for testing purposes (defined in `src/ml_pipeline/services/` of [sentinel-rat-ml-pipeline](https://github.com/ssciwr/sentinel-rat-ml-pipeline)):
 
-- 1 cat
-- 1 rodent
-- confidence = 0.95
+| Detection (model `megadetector` v5a) | Confidence | Bounding box (`x_min`, `y_min`, `x_max`, `y_max`) | Species (model `rodent-classifier` 0.1) |
+|-----------|------------|--------------|---------|
+| `animal` | 0.92 | 0.1, 0.2, 0.4, 0.5 | black rat (*Rattus rattus*), 0.87; brown rat (*Rattus norvegicus*), 0.1 |
+| `person` | 0.81 | 0.6, 0.1, 0.9, 0.95 | — (only `animal` detections are classified) |
 
 ### 3. Dashboard display
 
