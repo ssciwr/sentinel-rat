@@ -35,3 +35,6 @@ htmlcov/
 
 # Runtime data
 watched-images/
+
+# temporary folders of smoke_test.sh
+.smoke_test.*/

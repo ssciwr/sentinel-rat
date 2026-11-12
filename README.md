@@ -66,8 +66,8 @@ docker compose up --build
 Docker Compose will:
 1. Start PostgreSQL 17 and wait for it to be healthy
 2. Run the one-shot `db-init` service, which creates the database schema and loads the required **seed data** (reference data such as cameras and taxonomy, from `seed_db.py`), then exits
-3. Start the `dashboard`, `ml-pipeline`, and `pipeline` services (they wait for `db-init` to finish so the schema and seed data exist first)
-4. The `pipeline` service will start watching the watch folder for new images
+3. Start the `sentinel-rat-dashboard`, `sentinel-rat-ml-pipeline`, `sentinel-rat-pipeline` and `daily-analysis` services (they wait for `db-init` to finish so the schema and seed data exist first)
+4. The `sentinel-rat-pipeline` service will start watching the watch folder for new images
 5. The `daily-analysis` service aggregates the detections of each past day into the `daily_analysis_result` table, every night at `ANALYSIS_TIME` in the timezone `ANALYSIS_TZ` (see below)
 
 > [!NOTE]
@@ -129,6 +129,7 @@ docker compose down
 
 See `.env.example`. Key variables:
 
+- `IMAGE_TAG` (tag of the images built from `sentinel-rat-pipeline` and `sentinel-rat-dashboard`, default `local`; set another tag for a second stack on the same machine, e.g. a test stack, so that its builds don't replace the images of this one)
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST`, `POSTGRES_PORT`
 - `ML_PIPELINE_PORT`
 - `PIPELINE_PORT`
