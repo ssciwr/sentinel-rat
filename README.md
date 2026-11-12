@@ -209,3 +209,9 @@ Refer to the repository of each component for development instructions.
 ```
 
 `--editable` is needed while the pipeline needs dashboard changes that are not in the dashboard version locked in the pipeline's `uv.lock` yet.
+
+The GitHub workflow `.github/workflows/smoke-test.yml` runs the smoke test with all four repositories checked out side by side:
+
+- on pull requests that change the stack (`docker-compose.yml`, `.env.example`, the seed and sample data, the smoke test), with the `main` branches of the other repositories;
+- on the 1st and 15th of each month (about every 2 weeks), with the `main` branches of all repositories, to catch a change in any of them that breaks the stack;
+- by hand (Actions → Smoke test → Run workflow), with a branch, tag or commit of each repository, e.g. to test branches of several repositories together before merging them. By default, the chosen dashboard code is also used in the pipeline image (`--editable`); untick `editable_dashboard` to use the dashboard version locked in the pipeline's `uv.lock` there, as in a deployment.

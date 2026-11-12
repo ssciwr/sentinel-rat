@@ -1,0 +1,99 @@
+name: Smoke test
+
+# Builds and starts the whole stack from the four sentinel-rat repositories and
+# runs smoke_test.sh, which puts one image through every service.
+on:
+  # about every 2 weeks (cron can't skip every other week): catches a change in
+  # any of the repositories that breaks the stack, also without a pull request here
+  schedule:
+    - cron: "0 2 1,15 * *" # on the 1st and 15th of each month at 02:00 UTC
+  # e.g. to test branches of several repositories together before merging them
+  workflow_dispatch:
+    inputs:
+      pipeline_ref:
+        description: Branch, tag or commit of sentinel-rat-pipeline
+        default: main
+      dashboard_ref:
+        description: Branch, tag or commit of sentinel-rat-dashboard
+        default: main
+      ml_pipeline_ref:
+        description: Branch, tag or commit of sentinel-rat-ml-pipeline
+        default: main
+      editable_dashboard:
+        description: >-
+          Use the dashboard_ref code also in the pipeline image (--editable),
+          so that all services use it; untick to use the dashboard version
+          locked in the pipeline's uv.lock there, as in a deployment
+        type: boolean
+        default: true
+  pull_request:
+    branches: [main]
+    paths:
+      - docker-compose.yml
+      - .env.example
+      - seed_db.py
+      - sample_data.py
+      - smoke_test.sh
+      - tests/**
+      - .github/workflows/smoke-test.yml
+
+concurrency:
+  group: smoke-test-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      # side by side, like the build contexts in docker-compose.yml expect
+      # (../sentinel-rat-pipeline, ...); in a pull request or a scheduled run, the
+      # other repositories are tested at main
+      - uses: actions/checkout@v5
+        with:
+          path: sentinel-rat
+
+      - uses: actions/checkout@v5
+        with:
+          repository: ssciwr/sentinel-rat-pipeline
+          ref: ${{ inputs.pipeline_ref || 'main' }}
+          path: sentinel-rat-pipeline
+
+      - uses: actions/checkout@v5
+        with:
+          repository: ssciwr/sentinel-rat-dashboard
+          ref: ${{ inputs.dashboard_ref || 'main' }}
+          path: sentinel-rat-dashboard
+
+      - uses: actions/checkout@v5
+        with:
+          repository: ssciwr/sentinel-rat-ml-pipeline
+          ref: ${{ inputs.ml_pipeline_ref || 'main' }}
+          path: sentinel-rat-ml-pipeline
+
+      - name: List the tested commits
+        run: |
+          # shellcheck disable=SC2016 # the backticks are Markdown, not a command
+          {
+            echo "| Repository | Commit |"
+            echo "|---|---|"
+            for repo in sentinel-rat sentinel-rat-pipeline sentinel-rat-dashboard sentinel-rat-ml-pipeline; do
+              echo "| $repo | $(git -C "$repo" log -1 --format='`%h` %s') |"
+            done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Run the smoke test
+        working-directory: sentinel-rat
+        env:
+          # empty in a pull request or a scheduled run, which test each image as
+          # it is deployed
+          EDITABLE_DASHBOARD: ${{ inputs.editable_dashboard }}
+        run: |
+          args=()
+          if [ "$EDITABLE_DASHBOARD" = "true" ]; then
+            args=(--editable ../sentinel-rat-dashboard)
+          fi
+          ./smoke_test.sh "${args[@]}"
