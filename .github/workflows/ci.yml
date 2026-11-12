@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  compose-config:
+    # validate docker-compose.yml without building or starting anything, so the
+    # other sentinel-rat repos (the build contexts) don't need to be checked out
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate docker-compose.yml
+        run: |
+          # check the default services and the demo profile; fail on errors, and
+          # on variables used in docker-compose.yml but missing in .env.example
+          for profile in "" demo; do
+            echo "::group::profile '${profile:-default}'"
+            if ! docker compose --env-file .env.example ${profile:+--profile "$profile"} \
+                config --quiet 2> errors.txt; then
+              cat errors.txt
+              exit 1
+            fi
+            if grep "is not set" errors.txt; then
+              echo "::error::Add the variables above to .env.example"
+              exit 1
+            fi
+            echo "::endgroup::"
+          done

@@ -1,7 +1,6 @@
 services:
   db:
     image: postgis/postgis:17-3.5
-    container_name: pi-sentinel-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sentinel_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinel_pass}
@@ -34,8 +33,7 @@ services:
     build:
       context: ../sentinel-rat-dashboard
       dockerfile: Dockerfile
-    image: sentinel-rat-dashboard:local
-    container_name: db-init
+    image: sentinel-rat-dashboard:${IMAGE_TAG:-local}
     command:
       [
         "sh",
@@ -57,7 +55,6 @@ services:
     build:
       context: ../sentinel-rat-ml-pipeline
       dockerfile: Dockerfile
-    container_name: ml-pipeline
     ports:
       - "${ML_PIPELINE_PORT:-8000}:8000"
     healthcheck:
@@ -77,8 +74,7 @@ services:
     build:
       context: ../sentinel-rat-pipeline
       dockerfile: Dockerfile
-    image: sentinel-rat-pipeline:local
-    container_name: pipeline
+    image: sentinel-rat-pipeline:${IMAGE_TAG:-local}
     ports:
       - "${PIPELINE_PORT:-8001}:8001"
     volumes:
@@ -87,11 +83,21 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       WATCH_FOLDER_DOCKER: ${WATCH_FOLDER_DOCKER:-/data/images}
       DEFAULT_CAMERA_NAME: ${DEFAULT_CAMERA_NAME:-hd-zoo-01}
-      ML_PIPELINE_URL: http://sentinel-rat-ml-pipeline:${ML_PIPELINE_PORT:-8000}
+      ML_PIPELINE_URL: http://sentinel-rat-ml-pipeline:8000
       BATCH_WINDOW_SECONDS: ${BATCH_WINDOW_SECONDS:-60}
       MAX_BATCH_SIZE: ${MAX_BATCH_SIZE:-50}
       PROCESS_BACKLOG: ${PROCESS_BACKLOG:-true}
       FORCE_DELETE_IMAGE_IN_DB: ${FORCE_DELETE_IMAGE_IN_DB:-false}
+      # exists while the watcher runs (see health.py of sentinel-rat-pipeline)
+      HEALTH_FILE: /tmp/healthy
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # healthy as soon as the watcher runs, before the backlog of images at
+      # startup is processed, so this doesn't depend on the size of the backlog
+      start_period: 60s
     depends_on:
       sentinel-rat-ml-pipeline:
         condition: service_healthy
@@ -102,16 +108,63 @@ services:
     networks:
       - sentinel-rat-net
 
+  # Scheduler of the daily analysis: aggregates the detections of each past day
+  # into daily_analysis_result every night at ANALYSIS_TIME (in ANALYSIS_TZ),
+  # and once at startup to catch up on days missed while it was not running.
+  # It reuses the pipeline image. To run it once by hand instead:
+  #   docker compose run --rm daily-analysis --once
+  #   docker compose run --rm daily-analysis --date 2026-10-01 --recompute
+  #   docker compose run --rm daily-analysis --recompute-all
+  daily-analysis:
+    image: sentinel-rat-pipeline:${IMAGE_TAG:-local}
+    entrypoint: ["python", "-m", "sentinel_rat_pipeline.daily_analysis"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      ANALYSIS_TZ: ${ANALYSIS_TZ:-Asia/Colombo}
+      ANALYSIS_TIME: ${ANALYSIS_TIME:-00:00}
+      DET_CONF_THRESHOLD: ${DET_CONF_THRESHOLD:-0}
+      CLAS_CONF_THRESHOLD: ${CLAS_CONF_THRESHOLD:-0}
+      # exists while the last daily analysis succeeded, so a failing run shows
+      # as unhealthy (see health.py of sentinel-rat-pipeline)
+      HEALTH_FILE: /tmp/healthy
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # the catch-up on missed days at startup comes first
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - sentinel-rat-net
+
   sentinel-rat-dashboard:
     build:
       context: ../sentinel-rat-dashboard
       dockerfile: Dockerfile
-    image: sentinel-rat-dashboard:local
-    container_name: dashboard
+    image: sentinel-rat-dashboard:${IMAGE_TAG:-local}
     ports:
       - "${DASHBOARD_PORT:-8501}:3838"
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      # corrections rebuild the daily analysis of their day, in the same timezone
+      ANALYSIS_TZ: ${ANALYSIS_TZ:-Asia/Colombo}
+      # a correction keeps the thresholds stored in the daily analysis rows; these
+      # are only used if its camera and day has no rows yet
+      DET_CONF_THRESHOLD: ${DET_CONF_THRESHOLD:-0}
+      CLAS_CONF_THRESHOLD: ${CLAS_CONF_THRESHOLD:-0}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3838/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # init_db and the start of the R app come first
+      start_period: 60s
     depends_on:
       db:
         condition: service_healthy
@@ -127,9 +180,8 @@ services:
   # It reuses the dashboard image (same data model as db-init) and runs after
   # db-init so the schema and seed data (cameras, taxonomy) already exist.
   load-sample-data:
-    image: sentinel-rat-dashboard:local
+    image: sentinel-rat-dashboard:${IMAGE_TAG:-local}
     profiles: ["demo"]
-    container_name: load-sample-data
     command: ["/opt/py313/bin/python", "/seed/sample_data.py"]
     environment:
       DATABASE_URL: ${DATABASE_URL}
