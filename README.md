@@ -114,6 +114,17 @@ docker run --rm --network sentinel-rat_sentinel-rat-net \
 
 - **Dashboard**: open `http://localhost:8501` (or the port set in `.env`)
 - **ML pipeline**: open `http://localhost:8000/docs` (or the port set in `.env`) to see the FastAPI Swagger UI
+- **Service health**: `docker compose ps` shows `(healthy)` or `(unhealthy)` for each running service:
+
+  | Service | Healthy while |
+  |---------|---------------|
+  | `db` | PostgreSQL accepts connections |
+  | `sentinel-rat-ml-pipeline` | its `/health` endpoint answers |
+  | `sentinel-rat-pipeline` | the watcher of the watch folder runs |
+  | `daily-analysis` | the last daily analysis succeeded (see its logs if not) |
+  | `sentinel-rat-dashboard` | the app answers on its port |
+
+  An unhealthy service is not restarted automatically; check its logs with `docker compose logs <service>`.
 
 ### Step 4: Stop the stack
 
@@ -185,4 +196,16 @@ Given any image, the ML pipeline returns the same mock output for testing purpos
 
 ## Development
 
-Rerfer to repository of each component for development instructions.
+Refer to the repository of each component for development instructions.
+
+### Smoke test
+
+`smoke_test.sh` tests the whole stack end to end. It starts a separate test stack (Compose project `sentinel-rat-test`, image tag `test`, its own ports, database and watch folder, so a running stack on the same machine is not touched), puts one image into the watch folder, and checks that it is analyzed, stored, aggregated by the daily analysis, and that the dashboard responds. The test stack is removed afterwards.
+
+```bash
+./smoke_test.sh                                       # build, test, clean up
+./smoke_test.sh --keep                                # keep the test stack for debugging
+./smoke_test.sh --editable ../sentinel-rat-dashboard  # use the current dashboard code in the pipeline image
+```
+
+`--editable` is needed while the pipeline needs dashboard changes that are not in the dashboard version locked in the pipeline's `uv.lock` yet.

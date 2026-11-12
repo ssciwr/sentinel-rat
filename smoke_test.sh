@@ -193,7 +193,7 @@ fi
 # --- start the test stack and check that all services are up ---
 step "Starting the test stack '$PROJECT' (building images with tag 'test')"
 compose up --build --wait --wait-timeout 300 ||
-  fail "a service did not start, see the logs below"
+  fail "a service did not start or is unhealthy, see the logs below"
 pass "all services started"
 
 step "Adding a test image to the watch folder"

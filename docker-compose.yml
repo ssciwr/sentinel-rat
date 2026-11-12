@@ -88,6 +88,16 @@ services:
       MAX_BATCH_SIZE: ${MAX_BATCH_SIZE:-50}
       PROCESS_BACKLOG: ${PROCESS_BACKLOG:-true}
       FORCE_DELETE_IMAGE_IN_DB: ${FORCE_DELETE_IMAGE_IN_DB:-false}
+      # exists while the watcher runs (see health.py of sentinel-rat-pipeline)
+      HEALTH_FILE: /tmp/healthy
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # healthy as soon as the watcher runs, before the backlog of images at
+      # startup is processed, so this doesn't depend on the size of the backlog
+      start_period: 60s
     depends_on:
       sentinel-rat-ml-pipeline:
         condition: service_healthy
@@ -114,6 +124,16 @@ services:
       ANALYSIS_TIME: ${ANALYSIS_TIME:-00:00}
       DET_CONF_THRESHOLD: ${DET_CONF_THRESHOLD:-0}
       CLAS_CONF_THRESHOLD: ${CLAS_CONF_THRESHOLD:-0}
+      # exists while the last daily analysis succeeded, so a failing run shows
+      # as unhealthy (see health.py of sentinel-rat-pipeline)
+      HEALTH_FILE: /tmp/healthy
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # the catch-up on missed days at startup comes first
+      start_period: 30s
     depends_on:
       db:
         condition: service_healthy
@@ -138,6 +158,13 @@ services:
       # are only used if its camera and day has no rows yet
       DET_CONF_THRESHOLD: ${DET_CONF_THRESHOLD:-0}
       CLAS_CONF_THRESHOLD: ${CLAS_CONF_THRESHOLD:-0}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3838/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # init_db and the start of the R app come first
+      start_period: 60s
     depends_on:
       db:
         condition: service_healthy
