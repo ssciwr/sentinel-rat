@@ -1,7 +1,7 @@
 services:
   db:
     image: postgis/postgis:17-3.5
-    container_name: pi-sentinel-db
+    container_name: sentinel-rat-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sentinel_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinel_pass}
