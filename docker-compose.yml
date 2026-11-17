@@ -57,6 +57,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${ML_PIPELINE_PORT:-8000}:8000"
+    # the same watch folder as sentinel-rat-pipeline, read-only: the pipeline sends
+    # image paths relative to it, which the ML service reads under WATCH_FOLDER_DOCKER
+    volumes:
+      - ${WATCH_FOLDER_HOST:-../watched-images}:${WATCH_FOLDER_DOCKER:-/data/images}:ro
+    environment:
+      WATCH_FOLDER_DOCKER: ${WATCH_FOLDER_DOCKER:-/data/images}
     healthcheck:
       test:
         [
